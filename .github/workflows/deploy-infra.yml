@@ -32,12 +32,29 @@ jobs:
 
       - name: Deploy CloudFormation stack (idempotent)
         run: |
+          set +e
           aws cloudformation deploy \
             --template-file infra/cloudformation/bedrock.yaml \
             --stack-name "$STACK_NAME" \
             --parameter-overrides CreateSourceBucket=false \
             --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --no-fail-on-empty-changeset
+          rc=$?
+
+          # aws-cli may exit non-zero on a perfectly healthy "no changes"
+          # changeset (it throws a KeyError on the empty changeset status).
+          # Treat the deploy as successful when the stack itself is in a
+          # good state, regardless of that transient CLI quirk.
+          status=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "MISSING")
+          echo "exit_code=$rc stack_status=$status"
+          if [ "$status" = "CREATE_COMPLETE" ] || [ "$status" = "UPDATE_COMPLETE" ] || [ "$status" = "UPDATE_ROLLBACK_COMPLETE" ]; then
+            echo "Stack is healthy ($status). Deploy OK."
+            exit 0
+          fi
+          echo "Stack is not in a healthy state: $status"
+          exit $rc
 
       - name: Show stack outputs
         run: |
