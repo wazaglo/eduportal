@@ -121,7 +121,7 @@ Trusts `lambda.amazonaws.com`. Inline policies:
 | `EduportalS3` | Get/Put/Delete objects in the knowledge base bucket |
 
 ### `eduportal-github-actions-oidc` (CI/CD)
-Trusts GitHub's OIDC provider `token.actions.githubusercontent.com` for `repo:wazaglo/eduportal-azubi-success` (both the classic slug and the immutable-ID `repo:wazaglo@272252837/eduportal-azubi-success@1315937987` form, `aud` = `sts.amazonaws.com`). Permissions: Lambda create/update/delete, `iam:PassRole` on `eduportal-lambda-role`, DynamoDB table management, CloudWatch log retention.
+Trusts GitHub's OIDC provider `token.actions.githubusercontent.com` for `repo:wazaglo/eduportal` (both the classic slug and the immutable-ID `repo:wazaglo@272252837/eduportal@1315937987` form, `aud` = `sts.amazonaws.com`). Permissions: Lambda create/update/delete, `iam:PassRole` on `eduportal-lambda-role`, DynamoDB table management, CloudWatch log retention.
 
 OIDC provider: `token.actions.githubusercontent.com` (client `sts.amazonaws.com`), registered in IAM with GitHub's current thumbprint.
 

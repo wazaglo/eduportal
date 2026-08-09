@@ -3,7 +3,7 @@
 ## 1. Prerequisites
 
 - Node.js 20 LTS, npm
-- Git access to the repo (`git@github.com:wazaglo/eduportal-azubi-success.git`)
+- Git access to the repo (`git@github.com:wazaglo/eduportal.git`)
 - `gh` CLI (for triggering/debugging GitHub Actions)
 
 ## 2. CI/CD (Deployments happen here, not via the AWS CLI)
@@ -21,13 +21,13 @@ The backend is deployed automatically by GitHub Actions. See `.github/workflows/
 
 ```bash
 # Trigger manually on a branch
-gh workflow run "Deploy Backend" --repo wazaglo/eduportal-azubi-success --ref dev
+gh workflow run "Deploy Backend" --repo wazaglo/eduportal --ref dev
 
 # Watch a run
-gh run watch <run-id> --repo wazaglo/eduportal-azubi-success --exit-status
+gh run watch <run-id> --repo wazaglo/eduportal --exit-status
 ```
 
-The OIDC trust policy is scoped to `repo:wazaglo@272252837/eduportal-azubi-success@1315937987` (and the classic slug) on `dev`/`main`. The long-lived `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` secrets have been removed; `ROLE_ARN` is retained for reference only.
+The OIDC trust policy is scoped to `repo:wazaglo@272252837/eduportal@1315937987` (and the classic slug `repo:wazaglo/eduportal`) on `dev`/`main`. The long-lived `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` secrets have been removed; `ROLE_ARN` is retained for reference only.
 
 ## 3. Environment Variables
 
