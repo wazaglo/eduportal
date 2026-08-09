@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockModelsAndInferenceProfiles",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KnowledgeBaseRetrieval",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:Retrieve",
+        "bedrock:StartRetrieval"
+      ],
+      "Resource": "arn:aws:bedrock:eu-west-1:814330181503:knowledge-base/SSJQQYPJ4A"
+    },
+    {
+      "Sid": "Guardrails",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:ApplyGuardrail"
+      ],
+      "Resource": "arn:aws:bedrock:eu-west-1:814330181503:guardrail/8tznv6byph2i"
+    }
+  ]
+}

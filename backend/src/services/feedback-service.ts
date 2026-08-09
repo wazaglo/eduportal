@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { FeedbackRepository } from '../core/ports/feedback-repository';
 import { AnalyticsRepository } from '../core/ports/analytics-repository';
 import { Feedback, CreateFeedbackInput } from '../core/entities/feedback';
@@ -13,7 +13,7 @@ export class FeedbackService {
 
   async submitFeedback(input: CreateFeedbackInput): Promise<Feedback> {
     const feedback: Feedback = {
-      feedbackId: uuidv4(),
+      feedbackId: randomUUID(),
       userId: input.userId,
       messageId: input.messageId,
       conversationId: input.conversationId,

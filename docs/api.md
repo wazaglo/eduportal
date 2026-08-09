@@ -341,6 +341,14 @@ Get a presigned S3 download URL for a subject's curriculum PDF.
 
 *Admin only.* Delete a document. Request: `{ "documentId": "...", "s3Key": "..." }`.
 
+> **Ingestion:** after `complete-upload` writes the S3 object, it calls Bedrock
+> `StartIngestionJob` on the knowledge base (`SSJQQYPJ4A`) so the new document is
+> re-indexed for semantic search. An admin can also force a full re-ingestion at
+> any time by invoking the `eduportal-knowledge-base-sync-knowledge-base` Lambda
+> (it runs `StartIngestionJob` on the KB's data source, id `RQPXDTWNFN`). This
+> Lambda is not fronted by a REST route today; trigger it from the Lambda console
+> or wire `POST /knowledge-base/sync` → `knowledge-base/sync-knowledge-base`.
+
 ---
 
 ## Admin Endpoints (Cognito + admin role)

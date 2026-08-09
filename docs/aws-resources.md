@@ -35,6 +35,7 @@ This document lists the AWS resources backing the platform and how they are prov
 | `/knowledge-base/download-url` | GET | `eduportal-knowledge-base-get-download-url` |
 | `/knowledge-base/presign-upload` | POST | `eduportal-knowledge-base-presign-upload` |
 | `/knowledge-base/complete-upload` | POST | `eduportal-knowledge-base-complete-upload` |
+| `/knowledge-base/sync` *(admin, Lambda only — not wired to a route yet)* | POST | `eduportal-knowledge-base-sync-knowledge-base` |
 | `/admin/users` | GET | `eduportal-admin-list-users` |
 | `/admin/users/{id}` | PUT | `eduportal-admin-manage-user` |
 | `/admin/analytics` | GET | `eduportal-admin-get-analytics` |
@@ -65,6 +66,7 @@ All functions use runtime `nodejs20.x`, x86_64, handler `{source-path}.main` (e.
 | `eduportal-knowledge-base-presign-upload` | `knowledge-base/presign-upload.ts` | 256 MB | 30s |
 | `eduportal-knowledge-base-complete-upload` | `knowledge-base/complete-upload.ts` | 256 MB | 30s |
 | `eduportal-knowledge-base-delete-document` | `knowledge-base/delete-document.ts` | 256 MB | 30s |
+| `eduportal-knowledge-base-sync-knowledge-base` | `knowledge-base/sync-knowledge-base.ts` | 256 MB | 30s |
 | `eduportal-admin-list-users` | `admin/list-users.ts` | 256 MB | 30s |
 | `eduportal-admin-manage-user` | `admin/manage-user.ts` | 256 MB | 30s |
 | `eduportal-admin-get-analytics` | `admin/get-analytics.ts` | 256 MB | 30s |
@@ -72,7 +74,7 @@ All functions use runtime `nodejs20.x`, x86_64, handler `{source-path}.main` (e.
 
 ### Environment Variables (set on every function)
 
-`TABLE_USERS=ai-student-users`, `TABLE_QUESTIONS=ai-student-questions`, `TABLE_CACHE=ai-student-cache`, `TABLE_ANALYTICS=ai-student-analytics`, `TABLE_FEEDBACK=ai-student-feedback`, `TABLE_KNOWLEDGE=ai-student-knowledge`, `CORS_ORIGIN`, `COGNITO_CLIENT_ID`, `COGNITO_USER_POOL_ID`, `KNOWLEDGE_BUCKET`, `AI_PROVIDER=bedrock`, `AI_MODEL_CHAIN`, `AI_DAILY_LIMIT`, `GEMINI_API_KEY`.
+`TABLE_USERS=ai-student-users`, `TABLE_QUESTIONS=ai-student-questions`, `TABLE_CACHE=ai-student-cache`, `TABLE_ANALYTICS=ai-student-analytics`, `TABLE_FEEDBACK=ai-student-feedback`, `TABLE_KNOWLEDGE=ai-student-knowledge`, `CORS_ORIGIN`, `COGNITO_CLIENT_ID`, `COGNITO_USER_POOL_ID`, `KNOWLEDGE_BUCKET`, `BEDROCK_MODEL_ID`, `BEDROCK_MODEL_ROUTINE`, `BEDROCK_MODEL_COMPLEX`, `BEDROCK_KNOWLEDGE_BASE_ID`, `BEDROCK_GUARDRAIL_ID`, `BEDROCK_GUARDRAIL_VERSION`, `AI_DAILY_LIMIT`.
 
 ## 3. DynamoDB Tables (on-demand)
 
@@ -92,6 +94,7 @@ The questions table is deployed from `infra/dynamodb.yml` (stack `eduportal-ques
 - Bucket: `eduportal-azubi-success-knowledge-base` (SSE-S3 AES-256, public access blocked)
 - Layout: `knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt`
 - Content: 4 subjects (English Language, Core Mathematics, Integrated Science, Social Studies): 108 parsed documents + 4 source PDFs in `knowledge/sources/`
+- Indexed for semantic search by the **Bedrock Knowledge Base** on an S3 Vectors store (see section 8)
 
 ## 5. Cognito
 
@@ -120,6 +123,25 @@ Trusts `lambda.amazonaws.com`. Inline policies:
 | `EduportalS3` | Get/Put/Delete objects in the knowledge base bucket |
 
 ### `eduportal-github-actions-oidc` (CI/CD)
-Trusts GitHub's OIDC provider `token.actions.githubusercontent.com` for `repo:wazaglo/eduportal-azubi-success` (both the classic slug and the immutable-ID `repo:wazaglo@272252837/eduportal-azubi-success@1315937987` form, `aud` = `sts.amazonaws.com`). Permissions: Lambda create/update/delete, `iam:PassRole` on `eduportal-lambda-role`, DynamoDB table management, CloudWatch log retention.
+Trusts GitHub's OIDC provider `token.actions.githubusercontent.com` for `repo:wazaglo/eduportal` (both the classic slug and the immutable-ID `repo:wazaglo@272252837/eduportal@1315937987` form, `aud` = `sts.amazonaws.com`). Two inline policies:
+- `EduportalGitHubActionsDeploy`: Lambda create/update/delete + `iam:PassRole` on `eduportal-lambda-role`, CloudFormation stack management (`eduportal-*`), DynamoDB table management, CloudWatch log retention, **and** Bedrock infra role/policy management (`iam:CreateRole/DeleteRole/PutRolePolicy` on `eduportal-bedrock-kb-role`) for the infra-deploy workflow.
+- (No long-lived keys; `ROLE_ARN`/`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` secrets removed.)
 
-OIDC provider: `token.actions.githubusercontent.com` (client `sts.amazonaws.com`), registered in IAM with GitHub's current thumbprint.
+**Repo-slug note:** this trust must match the *current* GitHub repo slug. The repo was renamed from `eduportal-azubi-success` to `eduportal` (same owner/repo ids `272252837`/`1315937987`), so the OIDC `sub` condition is `repo:wazaglo/eduportal:*`.
+
+### `eduportal-bedrock-kb-role` (Bedrock Knowledge Base)
+Trusts `bedrock.amazonaws.com`. Inline policy `eduportal-bedrock-kb-policy`:
+
+| Scope | Actions |
+|-------|---------|
+| Model access | `bedrock:InvokeModel`, `bedrock:GetInferenceProfile` on foundation/inference-profile ARNs (Titan embeddings + EU Nova Lite parsing) |
+| Source bucket | `s3:GetObject`, `s3:ListBucket` on `eduportal-azubi-success-knowledge-base` |
+| Vector store | `s3vectors:CreateVectorBucket/PutVectorIndex/PutVectors/QueryVectors/GetVectors/DeleteVectors/ListVectorBuckets/ListIndexes` on the S3 Vectors bucket |
+
+Defined in `infra/ai/bedrock-knowledge-base-role.yml`; deploy with `aws cloudformation deploy`.
+
+## 8. Bedrock Knowledge Base + Guardrails + Models
+
+- **Knowledge Base**: `eduportal-knowledge-base` (ID `SSJQQYPJ4A`, status ACTIVE) backed by **S3 Vectors** (bucket `eduportal-kb-vectors`, index `eduportal-index`, Titan V2 embeddings @1024) and data source `eduportal-s3-knowledge` (ID `RQPXDTWNFN`, S3 prefix `knowledge/`, FIXED_SIZE chunk 300/20%, parsed with `eu.amazon.nova-lite-v1:0`). Ingestion: 110/112 docs indexed. Semantics via `RetrieveCommand`, `SEMANTIC`. Full runbook: [bedrock-knowledge-base.md](bedrock-knowledge-base.md).
+- **Guardrail**: `eduportalGuardrail` (ID `8tznv6byph2i`, currently DRAFT) applied on model invocation for content filtering and PII protection.
+- **Models** (Nova, via EU inference profiles): routine `eu.amazon.nova-lite-v1:0`, complex/primary `eu.amazon.nova-pro-v1:0`. `BedrockProvider` calls `bedrock:InvokeModel` using the Lambda role's IAM credentials (no API key).

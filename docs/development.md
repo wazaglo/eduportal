@@ -11,8 +11,8 @@
 ## Clone and Install
 
 ```bash
-git clone git@github.com:wazaglo/eduportal-azubi-success.git
-cd eduportal-azubi-success
+git clone git@github.com:wazaglo/eduportal.git
+cd eduportal
 ```
 
 ## Backend Development

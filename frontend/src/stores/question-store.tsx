@@ -128,6 +128,7 @@ export const QuestionProvider = component$(() => {
          state.total += 1;
        } catch (e: any) {
          const details = e?.response?.data?.error?.details;
+         const errorData = e?.response?.data?.error;
          if (details?.limitExceeded || e?.response?.status === 429) {
            state.limitReached = true;
            state.activeQuestion = {
@@ -137,6 +138,17 @@ export const QuestionProvider = component$(() => {
              subject: null,
              source: "ai",
              status: "limit_reached" as QuestionStatus,
+             modelUsed: null,
+             createdAt: new Date().toISOString(),
+           };
+         } else if (errorData?.code === 'GUARDRAIL_BLOCKED' || details?.guardrailAction === 'BLOCKED') {
+           state.activeQuestion = {
+             questionId: "",
+             question: content,
+             answer: "I'm sorry, I can't respond to that request. Please ask about admissions, courses, tuition, or other academic topics.",
+             subject: null,
+             source: "ai",
+             status: "answered",
              modelUsed: null,
              createdAt: new Date().toISOString(),
            };

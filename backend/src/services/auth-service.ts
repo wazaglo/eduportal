@@ -10,7 +10,6 @@ import {
   AdminGetUserCommand,
   type AuthenticationResultType,
 } from '@aws-sdk/client-cognito-identity-provider';
-import { v4 as uuidv4 } from 'uuid';
 import { COGNITO } from '../utils/constants';
 import { UserRepository } from '../core/ports/user-repository';
 import { AnalyticsRepository } from '../core/ports/analytics-repository';
