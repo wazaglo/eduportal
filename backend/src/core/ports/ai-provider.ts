@@ -5,6 +5,7 @@ export interface AIResponse {
   latencyMs: number;
   confidence: number;
   finishReason: string;
+  guardrailAction?: 'NONE' | 'BLOCKED' | 'MODIFIED';
 }
 
 export interface GenerateResponseInput {

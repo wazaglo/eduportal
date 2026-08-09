@@ -129,10 +129,10 @@ Output is written to `frontend/dist/`.
 
 The project uses strict TypeScript. Key settings:
 
-- `strict: true` — Enables all strict type-checking options
-- `noUncheckedIndexedAccess` — Protects against undefined array indexing
-- `noImplicitReturns` — Ensures all code paths return a value
-- `target: ES2022` — Modern JavaScript output
+- `strict: true`: Enables all strict type-checking options
+- `noUncheckedIndexedAccess`: Protects against undefined array indexing
+- `noImplicitReturns`: Ensures all code paths return a value
+- `target: ES2022`: Modern JavaScript output
 
 ### Naming Conventions
 
@@ -175,7 +175,7 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 export const main = wrapHandler(handler);
 ```
 
-**Dependency Injection:** Handlers are built with `createHandler(deps)` factories returning `wrapHandler(...)`; the exported `main` wires real dependencies. Tests call `createHandler` with fakes — see `backend/src/functions/question/ask.test.ts`.
+**Dependency Injection:** Handlers are built with `createHandler(deps)` factories returning `wrapHandler(...)`; the exported `main` wires real dependencies. Tests call `createHandler` with fakes: see `backend/src/functions/question/ask.test.ts`.
 
 **Error Handling:** Use custom error classes:
 

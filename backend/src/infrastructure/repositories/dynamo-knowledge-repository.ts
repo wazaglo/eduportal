@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, DeleteCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { KnowledgeRepository, KnowledgeListFilters } from '../../core/ports/knowledge-repository';
 import { CreateKnowledgeDocumentInput, KnowledgeDocument } from '../../core/entities/knowledge-document';
@@ -16,7 +16,7 @@ export class DynamoKnowledgeRepository implements KnowledgeRepository {
 
   async create(input: CreateKnowledgeDocumentInput): Promise<KnowledgeDocument> {
     const document: KnowledgeDocument = {
-      documentId: uuidv4(),
+      documentId: randomUUID(),
       s3Key: input.s3Key,
       fileName: input.fileName,
       year: input.year,

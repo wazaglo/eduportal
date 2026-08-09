@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  IAM service role + inline policy for the Bedrock Knowledge Base used by the
+  AI-Powered Student Support System (eduportal). The role lets Amazon Bedrock
+  invoke the Titan embeddings model, read the curriculum source bucket, and
+  read/write vectors in the S3 Vectors store.
+
+  Region: eu-west-1 (Ireland)   Account: 814330181503
+
+Parameters:
+  SourceBucketName:
+    Type: String
+    Default: eduportal-azubi-success-knowledge-base
+    Description: S3 bucket holding the curriculum documents synced into Bedrock KB.
+  VectorBucketName:
+    Type: String
+    Default: eduportal-kb-vectors
+    Description: S3 vector bucket (S3 Vectors) used as the KB vector store.
+
+Resources:
+  BedrockKnowledgeBaseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: eduportal-bedrock-kb-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns: []
+      Policies:
+        - PolicyName: eduportal-bedrock-kb-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Embedding + parsing models: Titan V2 embeddings and the EU Nova
+              # Lite inference profile used for document parsing. Wildcards cover
+              # the cross-region backing of EU inference profiles (eu-west-3).
+              - Sid: BedrockModels
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:GetInferenceProfile
+                Resource:
+                  - arn:aws:bedrock:*::foundation-model/*
+                  - arn:aws:bedrock:*:814330181503:inference-profile/*
+              # Read access to the source curriculum documents in S3.
+              - Sid: SourceBucketRead
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${SourceBucketName}
+                  - !Sub arn:aws:s3:::${SourceBucketName}/*
+              # Read/write vectors in the dedicated S3 Vectors bucket.
+              - Sid: BedrockVectorStore
+                Effect: Allow
+                Action:
+                  - s3vectors:CreateVectorBucket
+                  - s3vectors:PutVectorIndex
+                  - s3vectors:PutVectors
+                  - s3vectors:QueryVectors
+                  - s3vectors:GetVectors
+                  - s3vectors:DeleteVectors
+                  - s3vectors:ListVectorBuckets
+                  - s3vectors:ListIndexes
+                Resource:
+                  - !Sub arn:aws:s3vectors:eu-west-1:814330181503:bucket/${VectorBucketName}
+                  - !Sub arn:aws:s3vectors:eu-west-1:814330181503:bucket/${VectorBucketName}/index/*
+
+Outputs:
+  BedrockKnowledgeBaseRoleArn:
+    Description: ARN of the Bedrock KB service role.
+    Value: !GetAtt BedrockKnowledgeBaseRole.Arn

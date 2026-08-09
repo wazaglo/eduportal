@@ -1,4 +1,4 @@
-# AWS Resources — Inventory
+# AWS Resources: Inventory
 
 This document lists the AWS resources backing the platform and how they are provisioned. Account `814330181503`, region `eu-west-1`, profile `terrence`.
 
@@ -72,7 +72,7 @@ All functions use runtime `nodejs20.x`, x86_64, handler `{source-path}.main` (e.
 
 ### Environment Variables (set on every function)
 
-`TABLE_USERS=ai-student-users`, `TABLE_QUESTIONS=ai-student-questions`, `TABLE_CACHE=ai-student-cache`, `TABLE_ANALYTICS=ai-student-analytics`, `TABLE_FEEDBACK=ai-student-feedback`, `TABLE_KNOWLEDGE=ai-student-knowledge`, `CORS_ORIGIN`, `COGNITO_CLIENT_ID`, `COGNITO_USER_POOL_ID`, `KNOWLEDGE_BUCKET`, `AI_PROVIDER=bedrock`, `AI_MODEL_CHAIN`, `AI_DAILY_LIMIT`, `GEMINI_API_KEY`.
+`TABLE_USERS=ai-student-users`, `TABLE_QUESTIONS=ai-student-questions`, `TABLE_CACHE=ai-student-cache`, `TABLE_ANALYTICS=ai-student-analytics`, `TABLE_FEEDBACK=ai-student-feedback`, `TABLE_KNOWLEDGE=ai-student-knowledge`, `CORS_ORIGIN`, `COGNITO_CLIENT_ID`, `COGNITO_USER_POOL_ID`, `KNOWLEDGE_BUCKET`, `BEDROCK_MODEL_ID`, `BEDROCK_MODEL_ROUTINE`, `BEDROCK_MODEL_COMPLEX`, `BEDROCK_KNOWLEDGE_BASE_ID`, `BEDROCK_GUARDRAIL_ID`, `BEDROCK_GUARDRAIL_VERSION`, `AI_DAILY_LIMIT`.
 
 ## 3. DynamoDB Tables (on-demand)
 
@@ -91,7 +91,8 @@ The questions table is deployed from `infra/dynamodb.yml` (stack `eduportal-ques
 
 - Bucket: `eduportal-azubi-success-knowledge-base` (SSE-S3 AES-256, public access blocked)
 - Layout: `knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt`
-- Content: 4 subjects (English Language, Core Mathematics, Integrated Science, Social Studies) — 108 parsed documents + 4 source PDFs in `knowledge/sources/`
+- Content: 4 subjects (English Language, Core Mathematics, Integrated Science, Social Studies): 108 parsed documents + 4 source PDFs in `knowledge/sources/`
+- Indexed for semantic search by the **Bedrock Knowledge Base** on an S3 Vectors store (see section 8)
 
 ## 5. Cognito
 
@@ -123,3 +124,20 @@ Trusts `lambda.amazonaws.com`. Inline policies:
 Trusts GitHub's OIDC provider `token.actions.githubusercontent.com` for `repo:wazaglo/eduportal-azubi-success` (both the classic slug and the immutable-ID `repo:wazaglo@272252837/eduportal-azubi-success@1315937987` form, `aud` = `sts.amazonaws.com`). Permissions: Lambda create/update/delete, `iam:PassRole` on `eduportal-lambda-role`, DynamoDB table management, CloudWatch log retention.
 
 OIDC provider: `token.actions.githubusercontent.com` (client `sts.amazonaws.com`), registered in IAM with GitHub's current thumbprint.
+
+### `eduportal-bedrock-kb-role` (Bedrock Knowledge Base)
+Trusts `bedrock.amazonaws.com`. Inline policy `eduportal-bedrock-kb-policy`:
+
+| Scope | Actions |
+|-------|---------|
+| Model access | `bedrock:InvokeModel`, `bedrock:GetInferenceProfile` on foundation/inference-profile ARNs (Titan embeddings + EU Nova Lite parsing) |
+| Source bucket | `s3:GetObject`, `s3:ListBucket` on `eduportal-azubi-success-knowledge-base` |
+| Vector store | `s3vectors:CreateVectorBucket/PutVectorIndex/PutVectors/QueryVectors/GetVectors/DeleteVectors/ListVectorBuckets/ListIndexes` on the S3 Vectors bucket |
+
+Defined in `infra/ai/bedrock-knowledge-base-role.yml`; deploy with `aws cloudformation deploy`.
+
+## 8. Bedrock Knowledge Base + Guardrails + Models
+
+- **Knowledge Base**: `eduportal-knowledge-base` (ID `SSJQQYPJ4A`, status ACTIVE) backed by **S3 Vectors** (bucket `eduportal-kb-vectors`, index `eduportal-index`, Titan V2 embeddings @1024) and data source `eduportal-s3-knowledge` (ID `RQPXDTWNFN`, S3 prefix `knowledge/`, FIXED_SIZE chunk 300/20%, parsed with `eu.amazon.nova-lite-v1:0`). Ingestion: 110/112 docs indexed. Semantics via `RetrieveCommand`, `SEMANTIC`. Full runbook: [bedrock-knowledge-base.md](bedrock-knowledge-base.md).
+- **Guardrail**: `eduportalGuardrail` (ID `8tznv6byph2i`, currently DRAFT) applied on model invocation for content filtering and PII protection.
+- **Models** (Nova, via EU inference profiles): routine `eu.amazon.nova-lite-v1:0`, complex/primary `eu.amazon.nova-pro-v1:0`. `BedrockProvider` calls `bedrock:InvokeModel` using the Lambda role's IAM credentials (no API key).

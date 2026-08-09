@@ -1,6 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { z } from 'zod';
 import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
+import {
+  BedrockAgentClient,
+  StartIngestionJobCommand,
+} from '@aws-sdk/client-bedrock-agent';
 import { requireAdmin } from '../../utils/auth-middleware';
 import { defaultRoleResolver } from '../../utils/role-resolver';
 import { successResponse } from '../../utils/response';
@@ -8,7 +12,9 @@ import { wrapHandler } from '../../utils/error-handler';
 import { validateSchema } from '../../utils/validator';
 import { NotFoundError } from '../../utils/errors';
 import { KNOWLEDGE_BUCKET, KNOWLEDGE_LEVELS, SHS_SUBJECTS } from '../../utils/knowledge-constants';
+import { BEDROCK } from '../../utils/constants';
 import { DynamoKnowledgeRepository } from '../../infrastructure/repositories/dynamo-knowledge-repository';
+import { logger } from '../../utils/logger';
 const roleResolver = defaultRoleResolver();
 
 const completeSchema = z.object({
@@ -23,6 +29,7 @@ const completeSchema = z.object({
 });
 
 const s3 = new S3Client({ region: process.env.AWS_REGION ?? 'eu-west-1' });
+const agentClient = new BedrockAgentClient({ region: BEDROCK.REGION });
 const repo = new DynamoKnowledgeRepository();
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -50,6 +57,24 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     status: 'indexed',
     uploadedBy: user.userId,
   });
+
+  // Trigger Bedrock KB ingestion so the document becomes searchable via semantic search
+  if (BEDROCK.KNOWLEDGE_BASE_ID) {
+    try {
+      const result = await agentClient.send(new StartIngestionJobCommand({
+        knowledgeBaseId: BEDROCK.KNOWLEDGE_BASE_ID,
+        dataSourceId: BEDROCK.DATA_SOURCE_ID,
+      }));
+      logger.info('KB ingestion triggered after upload', {
+        jobId: result.ingestionJob?.ingestionJobId,
+        documentId: document.documentId,
+        s3Key: input.s3Key,
+      });
+    } catch (error: any) {
+      // Don't fail the upload if KB sync fails - it can be retried manually
+      logger.error('Failed to trigger KB ingestion', { error: error.message, s3Key: input.s3Key });
+    }
+  }
 
   return successResponse(document, 201);
 }

@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { AnalyticsRepository } from '../core/ports/analytics-repository';
 import { AnalyticsEvent, CreateAnalyticsEventInput, AnalyticsEventType } from '../core/entities/analytics-event';
 import { logger } from '../utils/logger';
@@ -27,7 +27,7 @@ export class AnalyticsService {
 
   async trackEvent(input: CreateAnalyticsEventInput): Promise<AnalyticsEvent> {
     const event: AnalyticsEvent = {
-      eventId: uuidv4(),
+      eventId: randomUUID(),
       eventType: input.eventType,
       userId: input.userId,
       sessionId: input.sessionId,

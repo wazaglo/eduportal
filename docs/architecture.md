@@ -9,11 +9,11 @@ The AI-Powered Student Support System is a cloud-native, serverless application 
 1. User asks a question via the Qwik frontend → API Gateway → `eduportal-question-ask`.
 2. API Gateway's Cognito authorizer validates the ID token; the handler resolves the user (`sub`) and role (`extractAndVerifyUser`, role from the users table) and validates the request.
 3. `QuestionService.ask` checks the DynamoDB cache for an existing answer to a similar query.
-4. On a cache miss, `KnowledgeService` searches the S3 knowledge base:
+4. On a cache miss, `KnowledgeService` searches the **Bedrock Knowledge Base**:
    - `detectSubject` narrows the search to the 4 supported subjects
-   - `knowledge-retrieval.ts` tokenizes and scores candidate documents, skipping NaCCA boilerplate sections
-   - the best excerpt is returned as a grounded answer, or the answer is marked as a weak match
-5. If no document matches well, the service falls back to an AI provider (Bedrock Nova chain, then Gemini) for a generated answer.
+   - `knowledge-service.ts` calls Bedrock `Retrieve` (semantic, top-3) via the S3 Vectors-backed KB
+   - the best chunks are returned as a grounded answer, or the answer is marked as a weak match
+5. If no document matches well, the service falls back to the Bedrock AI model (Nova Pro) for a generated answer.
 6. The question and answer are persisted to `ai-student-questions`, an analytics event is recorded, and the answer is cached.
 
 ## Component Descriptions
@@ -45,18 +45,15 @@ The AI-Powered Student Support System is a cloud-native, serverless application 
 ### S3 Knowledge Base
 - Bucket: `eduportal-azubi-success-knowledge-base` (SSE-S3 AES-256, public access blocked)
 - Scoped to 4 subjects: English Language, Core Mathematics, Integrated Science, Social Studies
-- Key layout: `knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt` — 108 parsed curriculum documents plus 4 source PDFs in `knowledge/sources/`
-- Retrieval is subject-scoped with boilerplate-aware scoring; see `backend/src/services/knowledge-retrieval.ts`
+- Key layout: `knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt`: 108 parsed curriculum documents plus 4 source PDFs in `knowledge/sources/`
+- Indexed by **Bedrock Knowledge Base** with S3 Vectors for semantic search; `RetrieveCommand` returns relevant chunks ranked by vector similarity
 
-### AI Integration (Amazon Bedrock + Gemini)
+### AI Integration (Amazon Bedrock)
 - Abstract `AIProvider` interface decouples business logic from the AI service
- - `ProviderFactory` (`backend/src/infrastructure/ai/provider-factory.ts`) selects the provider via `AI_PROVIDER=bedrock` and builds a `FailoverProvider` chain (ordered by the `AI_MODEL_CHAIN` env var):
-   1. Amazon Nova **Micro** (`eu.amazon.nova-micro-v1:0` — EU inference profile)
-   2. Amazon Nova **Lite** (`eu.amazon.nova-lite-v1:0`)
-   3. Google **Gemini Flash** (free Google API, `GEMINI_API_KEY`)
-   4. Amazon Nova **Pro** (`eu.amazon.nova-pro-v1:0`)
-- `BedrockProvider` calls the Bedrock **Converse API** with credentials from the Lambda role (no API key); `GeminiProvider` calls the free Google API over HTTPS; `FailoverProvider` advances to the next model on errors, throttling, unavailability, or empty answers
-- Used as the fallback in `question/ask` when the knowledge base cannot answer confidently; each answered question records `modelUsed` and emits `ai_response`/`model_switched` analytics events for the admin model-usage report. Each user is rate-limited to 10 AI answers/day (`AI_DAILY_LIMIT`).
+ - `ProviderFactory` (`backend/src/infrastructure/ai/provider-factory.ts`) returns a single `BedrockProvider`
+ - `BedrockProvider` calls the Bedrock **InvokeModel API** with Amazon Nova Pro (`eu.amazon.nova-pro-v1:0`), using IAM credentials from the Lambda role (no API key)
+ - Supports **Bedrock Guardrails** for content filtering and PII protection; blocked responses return a user-friendly message
+ - Used as the fallback in `question/ask` when the knowledge base cannot answer confidently; each answered question records `modelUsed` and emits `ai_response` analytics events for the admin model-usage report. Each user is rate-limited to 10 AI answers/day (`AI_DAILY_LIMIT`).
 
 ### Observability
 - Structured JSON logging from all Lambda handlers to CloudWatch Logs
@@ -74,8 +71,8 @@ The AI-Powered Student Support System is a cloud-native, serverless application 
 ## CI/CD
 
 GitHub Actions deploys on push to `dev`/`main` (`backend/**`) or `workflow_dispatch`:
-1. `lint-and-test` — `npm ci`, `tsc --noEmit`, `vitest run`
-2. `deploy` — builds/package handlers, assumes the `eduportal-github-actions-oidc` role via OIDC (no long-lived keys), updates all 23 lambdas
+1. `lint-and-test`: `npm ci`, `tsc --noEmit`, `vitest run`
+2. `deploy`: builds/package handlers, assumes the `eduportal-github-actions-oidc` role via OIDC (no long-lived keys), updates all 23 lambdas
 
 Frontend deploys via AWS Amplify; see `docs/deployment.md`.
 
@@ -86,6 +83,6 @@ Frontend deploys via AWS Amplify; see `docs/deployment.md`.
 | Frontend Framework | Qwik City | Resumability minimizes JS, SSR for SEO |
 | Backend Runtime | Node.js 20 (Lambda) | Shared TypeScript with the frontend |
 | Database | DynamoDB (on-demand) | Serverless, single-digit ms latency, scales automatically |
-| AI Platform | Amazon Bedrock Nova (Micro/Lite/Pro) + Google Gemini Flash | Managed FM chain with automatic failover; Bedrock uses IAM (no key), Gemini is free-tier |
+| AI Platform | Amazon Bedrock Nova (Lite routine / Pro complex) + Bedrock Guardrails + Bedrock Knowledge Base (S3 Vectors) | Managed FMs + guardrails for content filtering/PII; knowledge base for semantic retrieval; IAM-auth (no API key) |
 | Auth | Amazon Cognito + API Gateway authorizer | Managed users; tokens validated at the gateway, roles from the users table |
 | Deployment | GitHub Actions (OIDC) + AWS Amplify | Git-based CI/CD, no long-lived credentials |

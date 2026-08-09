@@ -94,10 +94,14 @@ jobs:
             "COGNITO_CLIENT_ID": "${{ secrets.COGNITO_CLIENT_ID }}",
             "COGNITO_USER_POOL_ID": "${{ secrets.COGNITO_USER_POOL_ID }}",
             "KNOWLEDGE_BUCKET": "${{ secrets.KNOWLEDGE_BUCKET }}",
-            "AI_PROVIDER": "bedrock",
-            "AI_MODEL_CHAIN": "${{ secrets.AI_MODEL_CHAIN }}",
-            "AI_DAILY_LIMIT": "10",
-            "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}"
+            "BEDROCK_MODEL_ID": "${{ secrets.BEDROCK_MODEL_ID }}",
+            "BEDROCK_MODEL_ROUTINE": "${{ secrets.BEDROCK_MODEL_ROUTINE }}",
+            "BEDROCK_MODEL_COMPLEX": "${{ secrets.BEDROCK_MODEL_COMPLEX }}",
+            "BEDROCK_KNOWLEDGE_BASE_ID": "${{ secrets.BEDROCK_KNOWLEDGE_BASE_ID }}",
+            "BEDROCK_DATA_SOURCE_ID": "${{ secrets.BEDROCK_DATA_SOURCE_ID }}",
+            "BEDROCK_GUARDRAIL_ID": "${{ secrets.BEDROCK_GUARDRAIL_ID }}",
+            "BEDROCK_GUARDRAIL_VERSION": "${{ secrets.BEDROCK_GUARDRAIL_VERSION }}",
+            "AI_DAILY_LIMIT": "10"
           }}
           JSON
 

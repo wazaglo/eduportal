@@ -52,10 +52,15 @@ export const QUERY_TYPES = {
   GENERAL: 'general',
 } as const;
 
-export const AI_MODELS = {
-  GPT_4O: 'gpt-4o',
-  GPT_4O_MINI: 'gpt-4o-mini',
-  O1_MINI: 'o1-mini',
+export const BEDROCK = {
+  MODEL_ID: process.env.BEDROCK_MODEL_ID ?? 'eu.amazon.nova-pro-v1:0',
+  MODEL_ROUTINE: process.env.BEDROCK_MODEL_ROUTINE ?? 'eu.amazon.nova-lite-v1:0',
+  MODEL_COMPLEX: process.env.BEDROCK_MODEL_COMPLEX ?? 'eu.amazon.nova-pro-v1:0',
+  KNOWLEDGE_BASE_ID: process.env.BEDROCK_KNOWLEDGE_BASE_ID ?? '',
+  DATA_SOURCE_ID: process.env.BEDROCK_DATA_SOURCE_ID ?? 'RQPXDTWNFN',
+  GUARDRAIL_ID: process.env.BEDROCK_GUARDRAIL_ID ?? '',
+  GUARDRAIL_VERSION: process.env.BEDROCK_GUARDRAIL_VERSION ?? 'DRAFT',
+  REGION: process.env.AWS_REGION ?? 'eu-west-1',
 } as const;
 
 export const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
