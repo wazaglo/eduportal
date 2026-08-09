@@ -1,0 +1,140 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Amazon Bedrock Knowledge Base (S3 Vectors) infrastructure for eduportal.
+
+  This template provisions the resources CloudFormation supports natively:
+    * S3 source bucket (the curriculum documents) — created only when it does
+      not already exist (Condition: CreateBucket)
+    * IAM roles + inline policies for (a) the Bedrock Knowledge Base service
+      role and (b) the Lambda execution role's Bedrock permissions
+
+  The Bedrock Knowledge Base, S3 Vectors vector bucket/index, and the KB data
+  source are **not** native CloudFormation resource types in eu-west-1, so they
+  are provisioned by the runbook in docs/bedrock-knowledge-base.md AFTER this
+  template succeeds and outputs its role ARN + IDs.
+
+  Account: 814330181503  Region: eu-west-1
+
+Parameters:
+  CreateSourceBucket:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+    Description: 'Create the S3 source bucket. Set to "false" to use an existing bucket.'
+  SourceBucketName:
+    Type: String
+    Default: eduportal-azubi-success-knowledge-base
+    Description: S3 bucket holding the NaCCA curriculum documents.
+  KnowledgeBaseId:
+    Type: String
+    Default: SSJQQYPJ4A
+    Description: Existing Bedrock Knowledge Base id (eduportal-knowledge-base).
+  DataSourceId:
+    Type: String
+    Default: RQPXDTWNFN
+    Description: Existing KB data source id (eduportal-s3-knowledge).
+  GuardrailId:
+    Type: String
+    Default: 8tznv6byph2i
+    Description: Existing Bedrock Guardrail id (eduportalGuardrail).
+  VectorBucketName:
+    Type: String
+    Default: eduportal-kb-vectors
+    Description: S3 Vectors bucket used as the KB vector store.
+
+Conditions:
+  CreateBucket: !Equals [!Ref CreateSourceBucket, 'true']
+
+Resources:
+  # ───────────────────────────────────────────────────────────── S3 source
+  SourceBucket:
+    Type: AWS::S3::Bucket
+    Condition: CreateBucket
+    Properties:
+      BucketName: !Ref SourceBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionConfiguration:
+              - ServerSideAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ───────────────────────────────────────────────────── KB service role
+  KnowledgeBaseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: eduportal-bedrock-kb-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: eduportal-bedrock-kb-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: BedrockModels
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:GetInferenceProfile
+                Resource:
+                  - arn:aws:bedrock:*::foundation-model/*
+                  - arn:aws:bedrock:*:814330181503:inference-profile/*
+              - Sid: SourceBucketRead
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${SourceBucketName}
+                  - !Sub arn:aws:s3:::${SourceBucketName}/*
+              - Sid: VectorStore
+                Effect: Allow
+                Action:
+                  - s3vectors:PutVectorIndex
+                  - s3vectors:PutVectors
+                  - s3vectors:QueryVectors
+                  - s3vectors:GetVectors
+                  - s3vectors:DeleteVectors
+                  - s3vectors:CreateVectorBucket
+                  - s3vectors:ListVectorBuckets
+                  - s3vectors:ListIndexes
+                Resource:
+                  - !Sub arn:aws:s3vectors:eu-west-1:814330181503:bucket/${VectorBucketName}
+                  - !Sub arn:aws:s3vectors:eu-west-1:814330181503:bucket/${VectorBucketName}/index/*
+
+  # ─────────────────────────────────────────── Lambda Bedrock permissions
+  # The Lambda execution role (eduportal-lambda-role) is managed outside this
+  # stack (it backs all 24 Lambdas). Its Bedrock inline policy "EduportalBedrock"
+  # is version-controlled in infra/ai/lambda-bedrock-policy.json and applied
+  # separately, so it is intentionally NOT a CloudFormation resource here.
+  # See docs/bedrock-knowledge-base.md -> "Lambda permissions" for the runbook.
+
+Outputs:
+  KnowledgeBaseRoleArn:
+    Description: ARN of the Bedrock Knowledge Base service role.
+    Value: !GetAtt KnowledgeBaseRole.Arn
+  KnowledgeBaseId:
+    Description: Bedrock Knowledge Base id (used by the backend + runbook).
+    Value: !Ref KnowledgeBaseId
+  DataSourceId:
+    Description: KB data source id (used by ingestion triggers).
+    Value: !Ref DataSourceId
+  GuardrailId:
+    Description: Bedrock Guardrail id.
+    Value: !Ref GuardrailId
+  VectorBucketName:
+    Description: S3 Vectors bucket name (for the runbook).
+    Value: !Ref VectorBucketName
+  SourceBucketName:
+    Description: S3 source bucket (curriculum documents).
+    Value: !Ref SourceBucketName

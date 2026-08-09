@@ -1,0 +1,72 @@
+name: Deploy Infra (Bedrock)
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'infra/**'
+  workflow_dispatch:
+
+env:
+  REGION: eu-west-1
+  OIDC_ROLE_ARN: arn:aws:iam::814330181503:role/eduportal-github-actions-oidc
+  STACK_NAME: eduportal-bedrock
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Bedrock infra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE_ARN }}
+          role-session-name: github-actions-deploy
+          aws-region: eu-west-1
+
+      - name: Deploy CloudFormation stack (idempotent)
+        run: |
+          aws cloudformation deploy \
+            --template-file infra/cloudformation/bedrock.yaml \
+            --stack-name "$STACK_NAME" \
+            --parameter-overrides CreateSourceBucket=false \
+            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset
+
+      - name: Show stack outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs" \
+            --output table
+
+  sync-knowledge:
+    name: Provision Bedrock KB / vector store (runbook)
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github_event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE_ARN }}
+          role-session-name: github-actions-kb
+          aws-region: eu-west-1
+
+      # The KB, S3 Vectors bucket/index, and data source are not native
+      # CloudFormation resource types; they are provisioned by the documented
+      # runbook. See docs/bedrock-knowledge-base.md for the exact commands.
+      - name: Run Bedrock KB provisioning runbook
+        run: |
+          echo "Follow docs/bedrock-knowledge-base.md to provision:"
+          echo "  - S3 Vectors bucket + vector index (with non-filterable AMAZON_BEDROCK_* metadata)"
+          echo "  - Bedrock Knowledge Base + ingestion data source"
+          echo "  - StartIngestionJob to index the curriculum documents"
