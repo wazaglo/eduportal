@@ -50,7 +50,7 @@ jobs:
     name: Provision Bedrock KB / vector store (runbook)
     needs: deploy
     runs-on: ubuntu-latest
-    if: github_event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
