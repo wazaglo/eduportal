@@ -1,4 +1,4 @@
-# eduportal-azubi-success
+# eduportal
 
 AI-powered student support platform. Students ask academic questions and get answers grounded in the NaCCA Senior High School curriculum knowledge base.
 
