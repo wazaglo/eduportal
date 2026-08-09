@@ -10,7 +10,7 @@ All endpoints require a Bearer token in the `Authorization` header, except the p
 Authorization: Bearer <id_token>
 ```
 
-Tokens are issued by Amazon Cognito. **API Gateway validates the Cognito ID token** (`COGNITO_USER_POOLS` authorizer) before the request reaches a Lambda; each handler then resolves the user and role from the users table via the `sub` claim (`extractAndVerifyUser`, `defaultRoleResolver`). Admin endpoints additionally require the `admin` role (`requireAdmin`). Send the **ID token** (`tokens.idToken`), not the access token — the gateway accepts ID tokens.
+Tokens are issued by Amazon Cognito. **API Gateway validates the Cognito ID token** (`COGNITO_USER_POOLS` authorizer) before the request reaches a Lambda; each handler then resolves the user and role from the users table via the `sub` claim (`extractAndVerifyUser`, `defaultRoleResolver`). Admin endpoints additionally require the `admin` role (`requireAdmin`). Send the **ID token** (`tokens.idToken`), not the access token, the gateway accepts ID tokens.
 
 ### Error Codes
 
@@ -196,7 +196,7 @@ Create a new user account. Default role is `student`.
 | enrollmentYear | number | No | Year of enrollment |
 | courseOfStudy | string | No | Course or program name |
 
-**Response** `201 Created` — `data` contains `user` and `tokens` (access + refresh).
+**Response** `201 Created`: `data` contains `user` and `tokens` (access + refresh).
 
 ### POST /auth/login
 

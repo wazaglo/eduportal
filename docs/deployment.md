@@ -14,9 +14,9 @@ The backend is deployed automatically by GitHub Actions. See `.github/workflows/
 2. **Job `lint-and-test`**: `npm ci` → `npm run typecheck` → `npm test` (vitest).
 3. **Job `deploy`** (needs lint-and-test):
    - `npm run build` (esbuild) and `npm run package` (one zip per handler)
-   - Assumes the `eduportal-github-actions-oidc` IAM role via GitHub OIDC (`aws-actions/configure-aws-credentials@v4`) — **no long-lived AWS keys**
+   - Assumes the `eduportal-github-actions-oidc` IAM role via GitHub OIDC (`aws-actions/configure-aws-credentials@v4`): **no long-lived AWS keys**
    - Creates or updates all 23 `eduportal-*` Lambda functions from `backend/deployments/**/*.zip`
-   - Sets the Lambda environment (table names, Cognito IDs, `CORS_ORIGIN`, `KNOWLEDGE_BUCKET`, `AI_PROVIDER`, `BEDROCK_MODEL_IDS`, `GEMINI_API_KEY`) from GitHub secrets — no hardcoded values
+   - Sets the Lambda environment (table names, Cognito IDs, `CORS_ORIGIN`, `KNOWLEDGE_BUCKET`, `AI_PROVIDER`, `BEDROCK_MODEL_IDS`, `GEMINI_API_KEY`) from GitHub secrets: no hardcoded values
    - `question/ask` is deployed at 120s / 1024MB; all others 30s / 256MB
 
 ```bash
@@ -43,7 +43,7 @@ The OIDC trust policy is scoped to `repo:wazaglo@272252837/eduportal-azubi-succe
 | `AI_DAILY_LIMIT` | `10` |
 | `GEMINI_API_KEY` | GitHub secret (free Google API), injected by CI/CD |
 
-Values are set as GitHub secrets (`CORS_ORIGIN`, `COGNITO_CLIENT_ID`, `COGNITO_USER_POOL_ID`, `KNOWLEDGE_BUCKET`, `AI_MODEL_CHAIN`, `AI_DAILY_LIMIT`, `GEMINI_API_KEY`) and injected into the Lambda environment by the deploy workflow — no hardcoded values in the workflow.
+Values are set as GitHub secrets (`CORS_ORIGIN`, `COGNITO_CLIENT_ID`, `COGNITO_USER_POOL_ID`, `KNOWLEDGE_BUCKET`, `AI_MODEL_CHAIN`, `AI_DAILY_LIMIT`, `GEMINI_API_KEY`) and injected into the Lambda environment by the deploy workflow: no hardcoded values in the workflow.
 
 ## 4. Frontend (Amplify)
 
@@ -83,7 +83,7 @@ curl -s -X DELETE "$API/question/<id>" -H "Authorization: Bearer $TOKEN"
 | Issue | Solution |
 |-------|----------|
 | CI fails at "Configure AWS credentials (OIDC)" | Check the OIDC trust policy `sub` matches GitHub's immutable-ID claim (`repo:owner@orgid/repo@repid:*`) and `id-token: write` is set |
-| CI fails at "Deploy all Lambda functions" | `ResourceConflictException` — order code-before-config and retry with a `LastUpdateStatus` poll |
+| CI fails at "Deploy all Lambda functions" | `ResourceConflictException`: order code-before-config and retry with a `LastUpdateStatus` poll |
 | Lambda returns 502 | Check CloudWatch logs; verify env vars are set on the function |
-| API returns 401 with `{"message":"Unauthorized"}` | API Gateway authorizer rejected the token — send the Cognito **ID token** (`tokens.idToken`), not the access token |
-| Login returns "Initiate Auth method not supported" | The auth flow is `USER_PASSWORD_AUTH` — it must go through `InitiateAuth`, not `AdminInitiateAuth` |
+| API returns 401 with `{"message":"Unauthorized"}` | API Gateway authorizer rejected the token: send the Cognito **ID token** (`tokens.idToken`), not the access token |
+| Login returns "Initiate Auth method not supported" | The auth flow is `USER_PASSWORD_AUTH`: it must go through `InitiateAuth`, not `AdminInitiateAuth` |

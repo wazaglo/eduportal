@@ -1,4 +1,4 @@
-# AWS Resources — Inventory
+# AWS Resources: Inventory
 
 This document lists the AWS resources backing the platform and how they are provisioned. Account `814330181503`, region `eu-west-1`, profile `terrence`.
 
@@ -91,7 +91,7 @@ The questions table is deployed from `infra/dynamodb.yml` (stack `eduportal-ques
 
 - Bucket: `eduportal-azubi-success-knowledge-base` (SSE-S3 AES-256, public access blocked)
 - Layout: `knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt`
-- Content: 4 subjects (English Language, Core Mathematics, Integrated Science, Social Studies) — 108 parsed documents + 4 source PDFs in `knowledge/sources/`
+- Content: 4 subjects (English Language, Core Mathematics, Integrated Science, Social Studies): 108 parsed documents + 4 source PDFs in `knowledge/sources/`
 
 ## 5. Cognito
 

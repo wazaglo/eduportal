@@ -45,13 +45,13 @@ The AI-Powered Student Support System is a cloud-native, serverless application 
 ### S3 Knowledge Base
 - Bucket: `eduportal-azubi-success-knowledge-base` (SSE-S3 AES-256, public access blocked)
 - Scoped to 4 subjects: English Language, Core Mathematics, Integrated Science, Social Studies
-- Key layout: `knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt` — 108 parsed curriculum documents plus 4 source PDFs in `knowledge/sources/`
+- Key layout: `knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt`: 108 parsed curriculum documents plus 4 source PDFs in `knowledge/sources/`
 - Retrieval is subject-scoped with boilerplate-aware scoring; see `backend/src/services/knowledge-retrieval.ts`
 
 ### AI Integration (Amazon Bedrock + Gemini)
 - Abstract `AIProvider` interface decouples business logic from the AI service
  - `ProviderFactory` (`backend/src/infrastructure/ai/provider-factory.ts`) selects the provider via `AI_PROVIDER=bedrock` and builds a `FailoverProvider` chain (ordered by the `AI_MODEL_CHAIN` env var):
-   1. Amazon Nova **Micro** (`eu.amazon.nova-micro-v1:0` — EU inference profile)
+   1. Amazon Nova **Micro** (`eu.amazon.nova-micro-v1:0`: EU inference profile)
    2. Amazon Nova **Lite** (`eu.amazon.nova-lite-v1:0`)
    3. Google **Gemini Flash** (free Google API, `GEMINI_API_KEY`)
    4. Amazon Nova **Pro** (`eu.amazon.nova-pro-v1:0`)
@@ -74,8 +74,8 @@ The AI-Powered Student Support System is a cloud-native, serverless application 
 ## CI/CD
 
 GitHub Actions deploys on push to `dev`/`main` (`backend/**`) or `workflow_dispatch`:
-1. `lint-and-test` — `npm ci`, `tsc --noEmit`, `vitest run`
-2. `deploy` — builds/package handlers, assumes the `eduportal-github-actions-oidc` role via OIDC (no long-lived keys), updates all 23 lambdas
+1. `lint-and-test`: `npm ci`, `tsc --noEmit`, `vitest run`
+2. `deploy`: builds/package handlers, assumes the `eduportal-github-actions-oidc` role via OIDC (no long-lived keys), updates all 23 lambdas
 
 Frontend deploys via AWS Amplify; see `docs/deployment.md`.
 

@@ -42,7 +42,7 @@ amplify.yml  Amplify hosting config for the frontend
 - **Auth**: Cognito owns user accounts; each Lambda resolves the user's role (`student`, `admin`, `support`) from the `ai-student-users` table via the `sub` claim. Admin endpoints additionally require the `admin` role.
 - **Compute**: 23 Lambda handlers (`nodejs20.x`); `question/ask` is 120s / 1024MB, the rest 30s / 256MB.
 - **Data**: DynamoDB (on-demand tables), S3 knowledge base.
-- **AI**: OpenAI fallback when the knowledge base cannot answer — already wired into the answer flow (see [AI Integration](#ai-integration)).
+- **AI**: OpenAI fallback when the knowledge base cannot answer, already wired into the answer flow (see [AI Integration](#ai-integration)).
 - **Monitoring**: CloudWatch access/execution logging, alarms → SNS, `eduportal-monitoring` dashboard.
 
 Details: [docs/architecture.md](docs/architecture.md), [docs/aws-resources.md](docs/aws-resources.md).
@@ -73,10 +73,10 @@ Full endpoint reference (methods, request/response, lambdas): [docs/api.md](docs
 ## AI Integration
 
 When the knowledge base cannot answer confidently, the backend falls back to an AI provider chain to refine a clean answer from the closest curriculum excerpt. With `AI_PROVIDER=bedrock`, `ProviderFactory` builds a `FailoverProvider` that tries the models listed in the **`AI_MODEL_CHAIN`** env var:
-1. Amazon Nova **Micro** (`eu.amazon.nova-micro-v1:0`) — cheap, answers most queries
+1. Amazon Nova **Micro** (`eu.amazon.nova-micro-v1:0`): cheap, answers most queries
 2. Amazon Nova **Lite** (`eu.amazon.nova-lite-v1:0`)
-3. Google **Gemini Flash** (`gemini`) — free Google API, `GEMINI_API_KEY`
-4. Amazon Nova **Pro** (`eu.amazon.nova-pro-v1:0`) — most capable
+3. Google **Gemini Flash** (`gemini`): free Google API, `GEMINI_API_KEY`
+4. Amazon Nova **Pro** (`eu.amazon.nova-pro-v1:0`): most capable
 
 Bedrock is invoked over the Converse API using the Lambda role's IAM credentials (no API key); Gemini is a free HTTPS API. Each model failure (error, throttle, unavailability, or empty answer) advances to the next. Each answered question records `modelUsed` and logs `ai_response`/`model_switched` analytics events, surfaced in the admin analytics report.
 
@@ -95,7 +95,7 @@ Bedrock is invoked over the Converse API using the Lambda role's IAM credentials
    gh secret set GEMINI_API_KEY   # from Google AI Studio
    gh secret set AI_DAILY_LIMIT   # optional, defaults to 10
    ```
-   The deploy workflow injects `AI_PROVIDER=bedrock` and these secrets into every Lambda. Reorder/remove a model by editing `AI_MODEL_CHAIN` — no code changes needed.
+   The deploy workflow injects `AI_PROVIDER=bedrock` and these secrets into every Lambda. Reorder/remove a model by editing `AI_MODEL_CHAIN`: no code changes needed.
 
 ## CI/CD
 
