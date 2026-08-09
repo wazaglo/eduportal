@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { CacheRepository } from '../../core/ports/cache-repository';
 import { CachedResponse, CreateCachedResponseInput } from '../../core/entities/cached-response';
@@ -19,7 +19,7 @@ export class DynamoCacheRepository implements CacheRepository {
     const expiresAt = new Date(Date.now() + (input.ttlMs ?? 86400000)).toISOString();
 
     const entry: CachedResponse = {
-      cacheId: uuidv4(),
+      cacheId: randomUUID(),
       query: input.query,
       queryEmbedding: input.queryEmbedding,
       response: input.response,

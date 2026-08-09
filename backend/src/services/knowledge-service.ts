@@ -1,18 +1,13 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  BedrockAgentRuntimeClient,
+  RetrieveCommand,
+} from '@aws-sdk/client-bedrock-agent-runtime';
 import { CacheService } from './cache-service';
 import { ProviderFactory } from '../infrastructure/ai/provider-factory';
 import type { AnalyticsService } from './analytics-service';
+import { BEDROCK } from '../utils/constants';
+import { detectSubject } from './knowledge-retrieval';
 import { logger } from '../utils/logger';
-import {
-  MIN_CONFIDENT_SCORE,
-  MIN_WEAK_SCORE,
-  WEAK_MATCH_NOTE,
-  SINGLE_TERM_MIN_COUNT,
-  calculateRelevance,
-  detectSubject,
-  extractRelevantExcerpt,
-  tokenize,
-} from './knowledge-retrieval';
 
 export interface AnswerResult {
   answer: string;
@@ -22,17 +17,16 @@ export interface AnswerResult {
   cached: boolean;
   pending?: boolean;
   modelUsed?: string;
+  guardrailAction?: 'NONE' | 'BLOCKED' | 'MODIFIED';
 }
 
 export class KnowledgeService {
-  private readonly s3: S3Client;
-  private readonly bucket: string;
+  private readonly kbClient: BedrockAgentRuntimeClient;
   private readonly cacheService: CacheService;
   private readonly analyticsService?: AnalyticsService;
 
   constructor(cacheService: CacheService, analyticsService?: AnalyticsService) {
-    this.s3 = new S3Client({ region: process.env.AWS_REGION ?? 'eu-west-1' });
-    this.bucket = process.env.KNOWLEDGE_BUCKET ?? '';
+    this.kbClient = new BedrockAgentRuntimeClient({ region: BEDROCK.REGION });
     this.cacheService = cacheService;
     this.analyticsService = analyticsService;
   }
@@ -49,12 +43,12 @@ export class KnowledgeService {
       };
     }
 
-    // Step 2: Search S3 Knowledge Base
+    // Step 2: Search Bedrock Knowledge Base (S3 Vectors semantic search)
     let kb: { answer: string; documentTitle: string; note?: string } | null = null;
-    if (this.bucket) {
-      kb = await this.searchS3KnowledgeBase(question, level);
+    if (BEDROCK.KNOWLEDGE_BASE_ID) {
+      kb = await this.searchKnowledgeBase(question, level);
     } else {
-      logger.warn('KNOWLEDGE_BUCKET not configured, skipping S3 search');
+      logger.warn('BEDROCK_KNOWLEDGE_BASE_ID not configured, skipping KB search');
     }
 
     // A confident match is on-topic: answer directly from the curriculum.
@@ -80,8 +74,6 @@ export class KnowledgeService {
     }
 
     // Step 3: Weak/no KB match -> refine with the AI provider when available.
-    // The closest curriculum excerpt is passed as context so the answer stays
-    // grounded in the curriculum instead of returning a raw content dump.
     if (kb && kb.note && this.isAiEnabled()) {
       const aiAnswer = await this.generateWithAI(question, kb.answer, userId);
       if (aiAnswer) {
@@ -106,8 +98,7 @@ export class KnowledgeService {
       }
     }
 
-    // Step 4: No AI available. Fall back to the weak KB excerpt, or the
-    // integration-pending placeholder when nothing was found.
+    // Step 4: No AI available. Fall back to the weak KB excerpt.
     if (kb && kb.note) {
       const answer = `${kb.answer}\n\n${kb.note}`;
       await this.cacheService.storeCachedResponse({
@@ -130,9 +121,7 @@ export class KnowledgeService {
       };
     }
 
-    // Step 4: No KB match. When AI is enabled, answer any question directly so
-    // students never hit the placeholder; only fall back to the integration
-    // placeholder when no AI provider is configured.
+    // Step 5: No KB match. When AI is enabled, answer directly.
     if (this.isAiEnabled()) {
       const aiAnswer = await this.generateWithAI(question, undefined, userId);
       if (aiAnswer) {
@@ -166,11 +155,7 @@ export class KnowledgeService {
   }
 
   private isAiEnabled(): boolean {
-    const provider = process.env.AI_PROVIDER ?? 'openai';
-    if (provider === 'bedrock') return true;
-    if (provider === 'gemini') return !!process.env.GEMINI_API_KEY;
-    if (provider === 'openai') return !!process.env.OPENAI_API_KEY;
-    return false;
+    return !!BEDROCK.MODEL_ID;
   }
 
   private async generateWithAI(question: string, curriculumContext?: string, userId?: string): Promise<{ answer: string; modelUsed: string; tokensUsed: number } | null> {
@@ -189,6 +174,11 @@ export class KnowledgeService {
         temperature: 0.4,
       });
 
+      if (result.guardrailAction === 'BLOCKED') {
+        logger.warn('Guardrail blocked AI response', { userId });
+        return null;
+      }
+
       if (!result.content || !result.content.trim()) {
         logger.warn('AI provider returned an empty answer');
         return null;
@@ -201,98 +191,60 @@ export class KnowledgeService {
     }
   }
 
-  private async searchS3KnowledgeBase(question: string, level: string): Promise<{ answer: string; documentTitle: string; note?: string } | null> {
+  private async searchKnowledgeBase(question: string, _level: string): Promise<{ answer: string; documentTitle: string; note?: string } | null> {
     try {
-      const levelPrefix = level ? `${level}/` : '';
-      let prefix = `knowledge/${levelPrefix}`;
-
       const detectedSubject = detectSubject(question);
-      if (detectedSubject) {
-        prefix = `knowledge/${levelPrefix}${detectedSubject.replace(/\s+/g, '_')}/`;
-        logger.info('Narrowed KB search to subject', { subject: detectedSubject, prefix });
-      }
+      logger.info('Searching Bedrock Knowledge Base', { kbId: BEDROCK.KNOWLEDGE_BASE_ID, subject: detectedSubject });
 
-      logger.info('Searching S3 knowledge base', { bucket: this.bucket, prefix });
+      const result = await this.kbClient.send(new RetrieveCommand({
+        knowledgeBaseId: BEDROCK.KNOWLEDGE_BASE_ID,
+        retrievalQuery: { text: question },
+        retrievalConfiguration: {
+          vectorSearchConfiguration: {
+            numberOfResults: 3,
+            overrideSearchType: 'SEMANTIC',
+          },
+        },
+      }));
 
-      const listCmd = new ListObjectsV2Command({
-        Bucket: this.bucket,
-        Prefix: prefix,
-      });
+      const chunks = result.retrievalResults ?? [];
 
-      const listResult = await this.s3.send(listCmd);
-      const documents = listResult.Contents ?? [];
-
-      if (documents.length === 0) {
-        logger.info('No documents found in S3 KB', { prefix });
+      if (chunks.length === 0) {
+        logger.info('No results from Bedrock KB', { question: question.substring(0, 50) });
         return null;
       }
 
-      const questionTerms = tokenize(question);
+      // Use the top result as the primary answer
+      const topChunk = chunks[0]!;
+      const answer = topChunk.content?.text ?? '';
+      const documentTitle = topChunk.location?.s3Location?.uri?.split('/').pop()?.replace(/\.[^.]+$/, '') ?? 'Document';
 
-      if (questionTerms.length === 0) {
-        logger.info('No usable question terms, skipping KB search', { question: question.substring(0, 50) });
+      if (!answer.trim()) {
+        logger.info('Bedrock KB returned empty content');
         return null;
       }
 
-      // Multi-term questions must match on at least two distinct terms so a
-      // document that merely repeats a single word does not win by frequency.
-      const distinctTermsRequired = questionTerms.length >= 2 ? 2 : 1;
-
-      let bestMatch: { answer: string; title: string; score: number } | null = null;
-
-      for (const doc of documents) {
-        if (!doc.Key) continue;
-
-        // Only searchable text documents are read; binary PDFs are skipped.
-        if (!doc.Key.toLowerCase().endsWith('.txt')) continue;
-
-        const title = doc.Key.replace(prefix, '');
-        const content = await this.readS3Document(doc.Key);
-        if (!content) continue;
-
-        const { score, distinctMatched, maxTermCount } = calculateRelevance(questionTerms, title, content);
-        const singleStrongMatch = distinctMatched === 1 && maxTermCount >= SINGLE_TERM_MIN_COUNT;
-        if (distinctMatched < distinctTermsRequired && !singleStrongMatch) continue;
-        if (score > 0 && (!bestMatch || score > bestMatch.score)) {
-          const excerpt = extractRelevantExcerpt(content, questionTerms, 700);
-          bestMatch = { answer: excerpt, title, score };
-        }
-      }
-
-      if (bestMatch && bestMatch.score >= MIN_CONFIDENT_SCORE) {
-        logger.info('Best KB document match (confident)', { title: bestMatch.title, score: bestMatch.score });
-        return { answer: bestMatch.answer, documentTitle: bestMatch.title };
-      }
-
-      if (bestMatch && bestMatch.score >= MIN_WEAK_SCORE) {
-        logger.info('Best KB document match (weak)', { title: bestMatch.title, score: bestMatch.score });
+      // Check relevance score - Bedrock returns a score between 0 and 1
+      // Scores below 0.3 are considered weak matches
+      const score = topChunk.score ?? 0;
+      if (score < 0.3) {
+        logger.info('Weak KB match', { score, documentTitle });
         return {
-          answer: bestMatch.answer,
-          documentTitle: bestMatch.title,
-          note: WEAK_MATCH_NOTE,
+          answer,
+          documentTitle,
+          note: '[Note: the knowledge base only touches on this topic. The closest curriculum excerpt is shown above; ask your teacher or check your textbook for a fuller explanation.]',
         };
       }
 
-      return null;
+      logger.info('Strong KB match', { score, documentTitle });
+      return { answer, documentTitle };
     } catch (error: any) {
-      logger.error('S3 knowledge base search failed', { error: error.message, bucket: this.bucket });
+      logger.error('Bedrock KB search failed', { error: error.message, kbId: BEDROCK.KNOWLEDGE_BASE_ID });
       return null;
     }
   }
 
   public detectSubject(question: string): string | null {
     return detectSubject(question);
-  }
-
-  private async readS3Document(key: string): Promise<string | null> {
-    try {
-      const getCmd = new GetObjectCommand({ Bucket: this.bucket, Key: key });
-      const response = await this.s3.send(getCmd);
-      const body = await response.Body?.transformToString();
-      return body ?? null;
-    } catch (error: any) {
-      logger.error('Failed to read S3 document', { error: error.message, key });
-      return null;
-    }
   }
 }

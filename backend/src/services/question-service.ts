@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { QuestionRepository } from '../core/ports/question-repository';
 import type { KnowledgeService } from './knowledge-service';
 import type { AnalyticsService } from './analytics-service';
@@ -39,7 +39,7 @@ export class QuestionService {
     }
 
     const question: Question = {
-      questionId: uuidv4(),
+      questionId: randomUUID(),
       userId: input.userId,
       question: input.question.trim(),
       normalizedQuestion: this.normalize(input.question),
