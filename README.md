@@ -92,6 +92,10 @@ Bedrock is invoked over the **InvokeModel API** using the Lambda role's IAM cred
 
 ## CI/CD
 
-GitHub Actions deploys the backend on push to `dev`/`main` (path `backend/**`) or `workflow_dispatch`: lint-and-test → deploy (assumes the OIDC role, updates the 24 `eduportal-*` lambdas). The frontend is hosted on Amplify.
+GitHub Actions:
+- **Deploy Backend** — runs on push to `dev`/`main` for `backend/**` (or `workflow_dispatch`): lint-and-test → deploy via OIDC (assumes `eduportal-github-actions-oidc`), updates the 24 `eduportal-*` Lambdas. Triggered by any code change.
+- **Deploy Infra (Bedrock)** — runs on push for `infra/**` (or `workflow_dispatch`): deploys the `eduportal-bedrock` CloudFormation stack (`infra/cloudformation/bedrock.yaml` = S3 source bucket, Bedrock KB service role) idempotently via the same OIDC role.
+
+The frontend is hosted on Amplify (auto-deploys on push to `main`/`dev`).
 
 See [docs/deployment.md](docs/deployment.md) and [docs/aws-resources.md](docs/aws-resources.md).

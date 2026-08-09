@@ -123,9 +123,11 @@ Trusts `lambda.amazonaws.com`. Inline policies:
 | `EduportalS3` | Get/Put/Delete objects in the knowledge base bucket |
 
 ### `eduportal-github-actions-oidc` (CI/CD)
-Trusts GitHub's OIDC provider `token.actions.githubusercontent.com` for `repo:wazaglo/eduportal` (both the classic slug and the immutable-ID `repo:wazaglo@272252837/eduportal@1315937987` form, `aud` = `sts.amazonaws.com`). Permissions: Lambda create/update/delete, `iam:PassRole` on `eduportal-lambda-role`, DynamoDB table management, CloudWatch log retention.
+Trusts GitHub's OIDC provider `token.actions.githubusercontent.com` for `repo:wazaglo/eduportal` (both the classic slug and the immutable-ID `repo:wazaglo@272252837/eduportal@1315937987` form, `aud` = `sts.amazonaws.com`). Two inline policies:
+- `EduportalGitHubActionsDeploy`: Lambda create/update/delete + `iam:PassRole` on `eduportal-lambda-role`, CloudFormation stack management (`eduportal-*`), DynamoDB table management, CloudWatch log retention, **and** Bedrock infra role/policy management (`iam:CreateRole/DeleteRole/PutRolePolicy` on `eduportal-bedrock-kb-role`) for the infra-deploy workflow.
+- (No long-lived keys; `ROLE_ARN`/`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` secrets removed.)
 
-OIDC provider: `token.actions.githubusercontent.com` (client `sts.amazonaws.com`), registered in IAM with GitHub's current thumbprint.
+**Repo-slug note:** this trust must match the *current* GitHub repo slug. The repo was renamed from `eduportal-azubi-success` to `eduportal` (same owner/repo ids `272252837`/`1315937987`), so the OIDC `sub` condition is `repo:wazaglo/eduportal:*`.
 
 ### `eduportal-bedrock-kb-role` (Bedrock Knowledge Base)
 Trusts `bedrock.amazonaws.com`. Inline policy `eduportal-bedrock-kb-policy`:
