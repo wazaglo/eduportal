@@ -40,7 +40,7 @@ amplify.yml  Amplify hosting config for the frontend
 
 - **API**: API Gateway (REST). A **Cognito user pool authorizer** protects every route except `/auth/*` and `OPTIONS`. Clients send the Cognito **ID token** as `Authorization: Bearer <idToken>`.
 - **Auth**: Cognito owns user accounts; each Lambda resolves the user's role (`student`, `admin`, `support`) from the `ai-student-users` table via the `sub` claim. Admin endpoints additionally require the `admin` role.
-- **Compute**: 23 Lambda handlers (`nodejs20.x`); `question/ask` is 120s / 1024MB, the rest 30s / 256MB.
+- **Compute**: 24 Lambda handlers (`nodejs20.x`); `question/ask` is 120s / 1024MB, `knowledge-base/*` sync is 30s / 256MB, the rest 30s / 256MB.
 - **Data**: DynamoDB (on-demand tables), S3 knowledge base.
 - **AI**: Amazon Bedrock — a **Bedrock Knowledge Base** (S3 Vectors) does semantic retrieval over the curriculum, and Amazon **Nova** models generate answers with **Bedrock Guardrails** for content filtering (see [AI Integration](#ai-integration)). No external API keys:
 - **Monitoring**: CloudWatch access/execution logging, alarms → SNS, `eduportal-monitoring` dashboard.
@@ -49,7 +49,7 @@ Details: [docs/architecture.md](docs/architecture.md), [docs/aws-resources.md](d
 
 ## Lambda Backend
 
-23 TypeScript handlers in `backend/src/functions/`, deployed to Lambda as `eduportal-<name>`.
+24 TypeScript handlers in `backend/src/functions/`, deployed to Lambda as `eduportal-<name>`.
 
 Scripts (in `backend/`):
 
@@ -64,7 +64,7 @@ npm run typecheck  # tsc --noEmit
 
 NaCCA Senior High School curriculum PDFs are parsed into searchable text sections in S3 (`knowledge/{Subject}/{Strand}/{Subject}-SHS{n}-{...}.txt`; 108 documents + 4 source PDFs). Subjects: Core Mathematics, English Language, Integrated Science, Social Studies. Metadata lives in the `ai-student-knowledge` table.
 
-The curriculum is indexed into a **Bedrock Knowledge Base** (`SSJQQYPJ4A`) on an **S3 Vectors** store with Titan V2 embeddings, enabling **semantic search**. Uploaded documents auto-trigger a knowledge-base ingestion re-sync (`knowledge-base/complete-upload`), and a manual `eduportal-knowledge-base-sync` handler forces a re-sync. The full provisioning runbook is in [docs/bedrock-knowledge-base.md](docs/bedrock-knowledge-base.md).
+The curriculum is indexed into a **Bedrock Knowledge Base** (`SSJQQYPJ4A`) on an **S3 Vectors** store with Titan V2 embeddings, enabling **semantic search**. New documents are uploaded via the presigned upload flow (`POST /knowledge-base/presign-upload` → `POST /knowledge-base/complete-upload`), which **auto-triggers a KB ingestion re-sync** so the upload becomes searchable immediately. An admin can also force a re-sync at any time via the `eduportal-knowledge-base-sync-knowledge-base` Lambda (admin-only). The full provisioning runbook is in [docs/bedrock-knowledge-base.md](docs/bedrock-knowledge-base.md).
 
 ## API
 
@@ -92,6 +92,6 @@ Bedrock is invoked over the **InvokeModel API** using the Lambda role's IAM cred
 
 ## CI/CD
 
-GitHub Actions deploys the backend on push to `dev`/`main` (path `backend/**`) or `workflow_dispatch`: lint-and-test → deploy (assumes the OIDC role, updates the 23 `eduportal-*` lambdas). The frontend is hosted on Amplify.
+GitHub Actions deploys the backend on push to `dev`/`main` (path `backend/**`) or `workflow_dispatch`: lint-and-test → deploy (assumes the OIDC role, updates the 24 `eduportal-*` lambdas). The frontend is hosted on Amplify.
 
 See [docs/deployment.md](docs/deployment.md) and [docs/aws-resources.md](docs/aws-resources.md).

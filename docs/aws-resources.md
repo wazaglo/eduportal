@@ -35,6 +35,7 @@ This document lists the AWS resources backing the platform and how they are prov
 | `/knowledge-base/download-url` | GET | `eduportal-knowledge-base-get-download-url` |
 | `/knowledge-base/presign-upload` | POST | `eduportal-knowledge-base-presign-upload` |
 | `/knowledge-base/complete-upload` | POST | `eduportal-knowledge-base-complete-upload` |
+| `/knowledge-base/sync` *(admin, Lambda only — not wired to a route yet)* | POST | `eduportal-knowledge-base-sync-knowledge-base` |
 | `/admin/users` | GET | `eduportal-admin-list-users` |
 | `/admin/users/{id}` | PUT | `eduportal-admin-manage-user` |
 | `/admin/analytics` | GET | `eduportal-admin-get-analytics` |
@@ -65,6 +66,7 @@ All functions use runtime `nodejs20.x`, x86_64, handler `{source-path}.main` (e.
 | `eduportal-knowledge-base-presign-upload` | `knowledge-base/presign-upload.ts` | 256 MB | 30s |
 | `eduportal-knowledge-base-complete-upload` | `knowledge-base/complete-upload.ts` | 256 MB | 30s |
 | `eduportal-knowledge-base-delete-document` | `knowledge-base/delete-document.ts` | 256 MB | 30s |
+| `eduportal-knowledge-base-sync-knowledge-base` | `knowledge-base/sync-knowledge-base.ts` | 256 MB | 30s |
 | `eduportal-admin-list-users` | `admin/list-users.ts` | 256 MB | 30s |
 | `eduportal-admin-manage-user` | `admin/manage-user.ts` | 256 MB | 30s |
 | `eduportal-admin-get-analytics` | `admin/get-analytics.ts` | 256 MB | 30s |
