@@ -47,7 +47,7 @@ index. The S3 Vector index ARN keeps the `s3vectors:` service prefix
      }'
    ```
 
-2. **IAM role** — deploy `infra/ai/bedrock-knowledge-base-role.yml`. It lets
+2. **IAM role** - deploy `infra/ai/bedrock-knowledge-base-role.yml`. It lets
    Bedrock invoke the embeddings/parsing models, read the source bucket, and
    read/write vectors:
    ```bash

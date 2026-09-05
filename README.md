@@ -42,7 +42,7 @@ amplify.yml  Amplify hosting config for the frontend
 - **Auth**: Cognito owns user accounts; each Lambda resolves the user's role (`student`, `admin`, `support`) from the `ai-student-users` table via the `sub` claim. Admin endpoints additionally require the `admin` role.
 - **Compute**: 24 Lambda handlers (`nodejs20.x`); `question/ask` is 120s / 1024MB, `knowledge-base/*` sync is 30s / 256MB, the rest 30s / 256MB.
 - **Data**: DynamoDB (on-demand tables), S3 knowledge base.
-- **AI**: Amazon Bedrock — a **Bedrock Knowledge Base** (S3 Vectors) does semantic retrieval over the curriculum, and Amazon **Nova** models generate answers with **Bedrock Guardrails** for content filtering (see [AI Integration](#ai-integration)). No external API keys:
+- **AI**: Amazon Bedrock, a **Bedrock Knowledge Base** (S3 Vectors) does semantic retrieval over the curriculum, and Amazon **Nova** models generate answers with **Bedrock Guardrails** for content filtering (see [AI Integration](#ai-integration)). No external API keys:
 - **Monitoring**: CloudWatch access/execution logging, alarms → SNS, `eduportal-monitoring` dashboard.
 
 Details: [docs/architecture.md](docs/architecture.md), [docs/aws-resources.md](docs/aws-resources.md), [docs/bedrock-knowledge-base.md](docs/bedrock-knowledge-base.md).
@@ -79,7 +79,7 @@ When the knowledge base cannot answer confidently, the backend falls back to an 
 - **Routine** questions → **Nova Lite** (`eu.amazon.nova-lite-v1:0`)
 - **Complex** questions → **Nova Pro** (`eu.amazon.nova-pro-v1:0`)
 
-Bedrock is invoked over the **InvokeModel API** using the Lambda role's IAM credentials (no API key), with **Bedrock Guardrails** (`eduportalGuardrail`, ID `8tznv6byph2i`) applied for content filtering and PII protection — blocked responses return a user-friendly message. Each answered question records `modelUsed` and logs `ai_response` analytics events surfaced in the admin analytics report.
+Bedrock is invoked over the **InvokeModel API** using the Lambda role's IAM credentials (no API key), with **Bedrock Guardrails** (`eduportalGuardrail`, ID `8tznv6byph2i`) applied for content filtering and PII protection, blocked responses return a user-friendly message. Each answered question records `modelUsed` and logs `ai_response` analytics events surfaced in the admin analytics report.
 
 **Why `eu.` prefix?** On-demand Nova calls require the regional **inference-profile** ID, not the bare model ID (`amazon.nova-pro-v1:0` fails).
 
@@ -93,8 +93,8 @@ Bedrock is invoked over the **InvokeModel API** using the Lambda role's IAM cred
 ## CI/CD
 
 GitHub Actions:
-- **Deploy Backend** — runs on push to `dev`/`main` for `backend/**` (or `workflow_dispatch`): lint-and-test → deploy via OIDC (assumes `eduportal-github-actions-oidc`), updates the 24 `eduportal-*` Lambdas. Triggered by any code change.
-- **Deploy Infra (Bedrock)** — runs on push for `infra/**` (or `workflow_dispatch`): deploys the `eduportal-bedrock` CloudFormation stack (`infra/cloudformation/bedrock.yaml` = S3 source bucket, Bedrock KB service role) idempotently via the same OIDC role.
+- **Deploy Backend**: runs on push to `dev`/`main` for `backend/**` (or `workflow_dispatch`): lint-and-test → deploy via OIDC (assumes `eduportal-github-actions-oidc`), updates the 24 `eduportal-*` Lambdas. Triggered by any code change.
+- **Deploy Infra (Bedrock)**: runs on push for `infra/**` (or `workflow_dispatch`): deploys the `eduportal-bedrock` CloudFormation stack (`infra/cloudformation/bedrock.yaml` = S3 source bucket, Bedrock KB service role) idempotently via the same OIDC role.
 
 The frontend is hosted on Amplify (auto-deploys on push to `main`/`dev`).
 
