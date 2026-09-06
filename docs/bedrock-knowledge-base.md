@@ -11,7 +11,7 @@ it. Account `814330181503`, region `eu-west-1`, profile `terrence`.
 | Knowledge Base | `eduportal-knowledge-base` (ID `SSJQQYPJ4A`, ARN `arn:aws:bedrock:eu-west-1:814330181503:knowledge-base/SSJQQYPJ4A`, **ACTIVE**) |
 | Vector bucket | `eduportal-kb-vectors` (ARN `arn:aws:s3vectors:eu-west-1:814330181503:bucket/eduportal-kb-vectors`) |
 | Vector index | `eduportal-index` (ARN `.../bucket/eduportal-kb-vectors/index/eduportal-index`) |
-| Embedding model | `amazon.titan-embed-text-v2:0` — 1024 dims, `FLOAT32`, euclidean |
+| Embedding model | `amazon.titan-embed-text-v2:0` - 1024 dims, `FLOAT32`, euclidean |
 | Parsing model | `eu.amazon.nova-lite-v1:0` (EU inference profile) |
 | Data source | `eduportal-s3-knowledge` (ID `RQPXDTWNFN`) |
 | Service role | `eduportal-bedrock-kb-role` (template `infra/ai/bedrock-knowledge-base-role.yml`) |

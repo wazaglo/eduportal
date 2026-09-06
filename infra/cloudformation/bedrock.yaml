@@ -3,7 +3,7 @@ Description: >
   Amazon Bedrock Knowledge Base (S3 Vectors) infrastructure for eduportal.
 
   This template provisions the resources CloudFormation supports natively:
-    * S3 source bucket (the curriculum documents) — created only when it does
+    * S3 source bucket (the curriculum documents) - created only when it does
       not already exist (Condition: CreateBucket)
     * IAM roles + inline policies for (a) the Bedrock Knowledge Base service
       role and (b) the Lambda execution role's Bedrock permissions

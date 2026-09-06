@@ -72,7 +72,7 @@ export const QaBubble = component$<QaBubbleProps>(({ content, role, timestamp, s
                   <div>
                     <span class="font-medium">{source.title}</span>
                     {source.snippet && (
-                      <span class="text-text-muted"> — {source.snippet}</span>
+                      <span class="text-text-muted"> - {source.snippet}</span>
                     )}
                   </div>
                 </div>

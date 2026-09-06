@@ -35,7 +35,7 @@ This document lists the AWS resources backing the platform and how they are prov
 | `/knowledge-base/download-url` | GET | `eduportal-knowledge-base-get-download-url` |
 | `/knowledge-base/presign-upload` | POST | `eduportal-knowledge-base-presign-upload` |
 | `/knowledge-base/complete-upload` | POST | `eduportal-knowledge-base-complete-upload` |
-| `/knowledge-base/sync` *(admin, Lambda only — not wired to a route yet)* | POST | `eduportal-knowledge-base-sync-knowledge-base` |
+| `/knowledge-base/sync` *(admin, Lambda only - not wired to a route yet)* | POST | `eduportal-knowledge-base-sync-knowledge-base` |
 | `/admin/users` | GET | `eduportal-admin-list-users` |
 | `/admin/users/{id}` | PUT | `eduportal-admin-manage-user` |
 | `/admin/analytics` | GET | `eduportal-admin-get-analytics` |

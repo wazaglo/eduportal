@@ -27,7 +27,7 @@ export default component$(() => {
     {
       icon: DatabaseIcon,
       title: "Knowledge Base",
-      description: "Access a curated library of learning materials. Upload textbooks and notes — the AI references your curriculum when generating answers.",
+      description: "Access a curated library of learning materials. Upload textbooks and notes - the AI references your curriculum when generating answers.",
       color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
     },
     {
