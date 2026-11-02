@@ -1,35 +1,69 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Azubi Success design system - indigo/violet AI-education look
+   Single source of truth. Components consume these via Tailwind
+   utilities (bg-surface, text-text-primary, bg-primary-600, ...).
+   ============================================================ */
+
 @theme {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  /* Primary: violet scale (remaps every primary-* utility site-wide) */
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+  --color-primary-950: #2e1065;
+
+  /* Accent: cyan, for gradient pairing with violet */
+  --color-accent-50: #ecfeff;
+  --color-accent-100: #cffafe;
+  --color-accent-200: #a5f3fc;
+  --color-accent-300: #67e8f9;
+  --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4;
+  --color-accent-600: #0891b2;
+  --color-accent-700: #0e7490;
+
+  /* Surfaces: warm white with a violet cast */
   --color-surface: #ffffff;
-  --color-surface-secondary: #f8fafc;
-  --color-surface-tertiary: #f1f5f9;
-  --color-border: #e2e8f0;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
-  --font-family-sans: "Inter", system-ui, sans-serif;
+  --color-surface-secondary: #f8f7fc;
+  --color-surface-tertiary: #f1effa;
+  --color-border: #e7e4f2;
+
+  /* Text: indigo-cast neutrals */
+  --color-text-primary: #17133a;
+  --color-text-secondary: #4b4867;
+  --color-text-muted: #8b87a8;
+
+  --font-family-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  --shadow-glow: 0 0 40px -8px rgb(124 58 237 / 0.35);
+  --shadow-card: 0 1px 2px rgb(23 19 58 / 0.04), 0 8px 24px -12px rgb(23 19 58 / 0.12);
 }
 
 .dark {
-  --color-surface: #0f172a;
-  --color-surface-secondary: #1e293b;
-  --color-surface-tertiary: #334155;
-  --color-border: #334155;
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  /* Deep violet-black surfaces */
+  --color-surface: #0d0b1a;
+  --color-surface-secondary: #151226;
+  --color-surface-tertiary: #1d1936;
+  --color-border: #2a2547;
+  --color-text-primary: #f2f0fb;
+  --color-text-secondary: #a5a1c2;
+  --color-text-muted: #6e6a8f;
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 html {
@@ -43,6 +77,12 @@ body {
   transition: background-color 0.2s, color 0.2s;
 }
 
+::selection {
+  background-color: var(--color-primary-600);
+  color: #ffffff;
+}
+
+/* Scrollbar follows the theme (color-scheme handles native bars) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -53,16 +93,107 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-text-muted);
+  background: var(--color-border);
   border-radius: 3px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+}
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
+  background: var(--color-text-muted);
+}
+
+/* Readable placeholders in both modes (dark-mode contrast fix) */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Violet -> fuchsia sweep for headline emphasis */
+  .gradient-text {
+    background-image: linear-gradient(100deg, var(--color-primary-600), var(--color-primary-400) 55%, var(--color-accent-500));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dark .gradient-text {
+    background-image: linear-gradient(100deg, var(--color-primary-400), var(--color-primary-300) 55%, var(--color-accent-400));
+  }
+
+  /* Primary CTA gradient; hover lifts instead of repainting bg */
+  .btn-gradient {
+    background-image: linear-gradient(120deg, var(--color-primary-600), var(--color-primary-500) 60%, var(--color-accent-600));
+    color: #ffffff;
+    box-shadow: 0 8px 24px -12px rgb(124 58 237 / 0.6);
+    transition: box-shadow 0.2s, transform 0.2s, filter 0.2s;
+  }
+
+  .btn-gradient:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 12px 32px -12px rgb(124 58 237 / 0.75);
+  }
+
+  .btn-gradient:active {
+    transform: translateY(1px);
+  }
+
+  /* Frosted card with violet rim light */
+  .glass-card {
+    background-color: color-mix(in srgb, var(--color-surface) 82%, transparent);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Ambient hero backdrop: layered radial glows on the page bg */
+  .hero-mesh {
+    background:
+      radial-gradient(42rem 24rem at 15% 0%, rgb(124 58 237 / 0.14), transparent 60%),
+      radial-gradient(36rem 22rem at 85% 10%, rgb(8 145 178 / 0.10), transparent 60%),
+      radial-gradient(30rem 20rem at 50% 100%, rgb(139 92 246 / 0.08), transparent 65%);
+  }
+
+  .dark .hero-mesh {
+    background:
+      radial-gradient(42rem 24rem at 15% 0%, rgb(124 58 237 / 0.22), transparent 60%),
+      radial-gradient(36rem 22rem at 85% 10%, rgb(8 145 178 / 0.14), transparent 60%),
+      radial-gradient(30rem 20rem at 50% 100%, rgb(139 92 246 / 0.12), transparent 65%);
+  }
+
+  /* Soft floating glow orb for hero decor */
+  .glow-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(64px);
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
   }
 }
