@@ -69,7 +69,6 @@ export const Header = component$<HeaderProps>(({ onMenuToggle$, class: className
             aria-expanded={notificationsOpen.value}
           >
             <BellIcon class="h-5 w-5" />
-            <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
           </button>
 
           {notificationsOpen.value && (

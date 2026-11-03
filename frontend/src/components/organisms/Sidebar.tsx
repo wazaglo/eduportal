@@ -5,7 +5,6 @@ import {
   MessageSquareIcon,
   HistoryIcon,
   UserIcon,
-  SettingsIcon,
   LogOutIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -81,7 +80,6 @@ export const Sidebar = component$<SidebarProps>(({ class: className }) => {
       </nav>
 
       <div class={["p-3 border-t border-border space-y-1", collapsed.value ? "flex flex-col items-center" : ""].join(" ")}>
-        <NavItem href={isAdmin ? "/admin/settings" : "/dashboard/settings"} label="SettingsIcon" icon={SettingsIcon} />
         <button
           onClick$={() => auth.logout()}
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-200"

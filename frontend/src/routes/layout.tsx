@@ -38,7 +38,7 @@ export default component$(() => {
                 Sign In
               </Link>
               <Link href="/auth/register" class="ml-2">
-                <Button variant="primary" size="sm">Get Started</Button>
+                <Button variant="primary" size="sm" class="btn-gradient">Get Started</Button>
               </Link>
               <button
                 onClick$={() => (theme.isDark.value = !theme.isDark.value)}
@@ -71,7 +71,7 @@ export default component$(() => {
               Sign In
             </Link>
             <Link href="/auth/register" class="block px-4 py-3" onClick$={() => (mobileMenuOpen.value = false)}>
-              <Button variant="primary" fullWidth>Get Started</Button>
+              <Button variant="primary" fullWidth class="btn-gradient">Get Started</Button>
             </Link>
             <button
               onClick$={() => (theme.isDark.value = !theme.isDark.value)}
@@ -113,9 +113,8 @@ export default component$(() => {
             <div>
               <h3 class="text-sm font-semibold text-text-primary mb-3">Support</h3>
               <ul class="space-y-2">
-                <li><a href="#" class="text-sm text-text-secondary hover:text-text-primary transition-colors">Help Center</a></li>
-                <li><a href="#" class="text-sm text-text-secondary hover:text-text-primary transition-colors">Privacy Policy</a></li>
-                <li><a href="#" class="text-sm text-text-secondary hover:text-text-primary transition-colors">Terms of Service</a></li>
+                <li><Link href="/#features" class="text-sm text-text-secondary hover:text-text-primary transition-colors">Help Center</Link></li>
+                <li><Link href="/#about" class="text-sm text-text-secondary hover:text-text-primary transition-colors">Privacy Policy</Link></li>
               </ul>
             </div>
           </div>

@@ -4,13 +4,9 @@ import {
   MessageSquareIcon,
   BookOpenIcon,
   DatabaseIcon,
-  TrendingUpIcon,
-  ClockIcon,
   ArrowRightIcon,
   WandIcon,
-  GraduationCapIcon,
   LightbulbIcon,
-  ZapIcon,
 } from "lucide-qwik";
 import { StatCard } from "~/components/molecules/StatCard";
 import { Button } from "~/components/atoms/Button";
@@ -26,14 +22,14 @@ export default component$(() => {
       label: "Ask a Question",
       description: "Get answers from the curriculum",
       href: "/dashboard/ask",
-      color: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      color: "bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400",
     },
     {
       icon: BookOpenIcon,
       label: "View History",
       description: "Browse past questions and FAQs",
       href: "/dashboard/history",
-      color: "bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-400",
+      color: "bg-accent-50 text-accent-600 dark:bg-accent-700/20 dark:text-accent-400",
     },
     {
       icon: DatabaseIcon,
@@ -64,32 +60,18 @@ export default component$(() => {
           title="Questions Asked"
           value={questions.state.total}
           icon={MessageSquareIcon}
-          trend="+12%"
-          trendUp
           color="primary"
         />
         <StatCard
           title="Answered"
           value={questions.state.questions.filter((q) => q.status === "answered").length}
           icon={LightbulbIcon}
-          trend="+8%"
-          trendUp
           color="success"
-        />
-        <StatCard
-          title="Study Hours"
-          value="24"
-          icon={ClockIcon}
-          trend="+23%"
-          trendUp
-          color="warning"
         />
         <StatCard
           title="KB Articles"
           value="108"
           icon={DatabaseIcon}
-          trend="+2"
-          trendUp
           color="info"
         />
       </div>
@@ -164,36 +146,6 @@ export default component$(() => {
                   <ArrowRightIcon class="h-4 w-4 text-text-muted group-hover:text-primary-600 transition-colors" />
                 </Link>
               ))}
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-border bg-surface p-6 mt-6">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="rounded-lg bg-primary-50 dark:bg-primary-950/40 p-2">
-                <TrendingUpIcon class="h-5 w-5 text-primary-600" />
-              </div>
-              <h2 class="text-lg font-semibold text-text-primary">Weekly Streak</h2>
-            </div>
-            <div class="text-center py-4">
-              <div class="text-3xl font-bold text-primary-600 mb-1">5</div>
-              <p class="text-sm text-text-muted">days in a row</p>
-              <div class="flex justify-center gap-2 mt-4">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => (
-                  <div key={day} class="flex flex-col items-center gap-1">
-                    <div
-                      class={[
-                        "h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium",
-                        i < 5
-                          ? "bg-primary-600 text-white"
-                          : "bg-surface-tertiary text-text-muted",
-                      ].join(" ")}
-                    >
-                      <ZapIcon class={i < 5 ? "h-3 w-3" : "h-3 w-3"} />
-                    </div>
-                    <span class="text-[10px] text-text-muted">{day}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
