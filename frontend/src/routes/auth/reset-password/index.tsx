@@ -34,11 +34,11 @@ export default component$(() => {
 
   if (isSubmitted.value) {
     return (
-      <div class="min-h-screen flex items-center justify-center px-4 py-12">
+      <div class="min-h-screen flex items-center justify-center px-4 pt-28 pb-16">
         <div class="w-full max-w-md text-center">
           <div class="rounded-2xl border border-border bg-surface p-8 sm:p-10">
-            <div class="inline-flex items-center justify-center rounded-2xl bg-green-50 dark:bg-green-950/40 p-4 mb-6">
-              <CheckCircle2Icon class="h-10 w-10 text-green-600" />
+            <div class="inline-flex items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 p-4 mb-6">
+              <CheckCircle2Icon class="h-10 w-10 text-emerald-600" />
             </div>
             <h1 class="text-2xl font-bold text-text-primary mb-3">Check your email</h1>
             <p class="text-text-muted mb-6">

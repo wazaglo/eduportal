@@ -45,7 +45,7 @@ export default component$(() => {
   });
 
   return (
-    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="min-h-screen flex items-center justify-center px-4 pt-28 pb-16">
       <div class="w-full max-w-md text-center">
         <div class="rounded-2xl border border-border bg-surface p-8 sm:p-10">
           <div class="inline-flex items-center justify-center rounded-2xl bg-primary-50 dark:bg-primary-950/40 p-4 mb-6">
@@ -59,9 +59,9 @@ export default component$(() => {
           </p>
 
           {resent.value ? (
-            <div class="flex items-center justify-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 mb-6">
-              <CheckCircle2Icon class="h-4 w-4 text-green-600" />
-              <span class="text-sm text-green-600 dark:text-green-400 font-medium">
+            <div class="flex items-center justify-center gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 mb-6">
+              <CheckCircle2Icon class="h-4 w-4 text-emerald-600" />
+              <span class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
                 Verification code sent!
               </span>
             </div>

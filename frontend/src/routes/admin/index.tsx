@@ -15,10 +15,10 @@ import { Badge } from "~/components/atoms/Badge";
 
 export default component$(() => {
   const systemMetrics = [
-    { label: "CPU Usage", value: "45%", color: "bg-green-500" },
-    { label: "Memory", value: "62%", color: "bg-yellow-500" },
+    { label: "CPU Usage", value: "45%", color: "bg-emerald-500" },
+    { label: "Memory", value: "62%", color: "bg-amber-500" },
     { label: "Disk", value: "78%", color: "bg-primary-500" },
-    { label: "API Latency", value: "120ms", color: "bg-green-500" },
+    { label: "API Latency", value: "120ms", color: "bg-emerald-500" },
   ];
 
   const recentUsers = [

@@ -14,11 +14,11 @@ export const StatCard = component$<StatCardProps>(
   ({ title, value, icon: Icon, trend, trendUp, color = "primary", class: className }) => {
     const colors = {
       primary: "bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400",
-      success: "bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-400",
+      success: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
       warning:
-        "bg-yellow-50 text-yellow-600 dark:bg-yellow-950/40 dark:text-yellow-400",
+        "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
       danger: "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400",
-      info: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      info: "bg-accent-50 text-accent-600 dark:bg-accent-700/20 dark:text-accent-400",
     };
 
     return (
@@ -37,7 +37,7 @@ export const StatCard = component$<StatCardProps>(
                 <span
                   class={[
                     "text-xs font-medium",
-                    trendUp ? "text-green-600" : "text-red-600",
+                    trendUp ? "text-emerald-600" : "text-red-600",
                   ].join(" ")}
                 >
                   {trend}

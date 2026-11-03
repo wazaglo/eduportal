@@ -174,7 +174,7 @@ export default component$(() => {
       </div>
 
       {uploadNotice.value && (
-        <div class="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-sm text-green-700 dark:text-green-400" role="status">
+        <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-sm text-emerald-700 dark:text-emerald-400" role="status">
           {uploadNotice.value}
         </div>
       )}
