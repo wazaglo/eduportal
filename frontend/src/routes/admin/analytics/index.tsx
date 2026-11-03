@@ -49,7 +49,7 @@ export default component$(() => {
                     style={{ height: `${(d.conversations / maxValue) * 100}%` }}
                   />
                   <div
-                    class="w-full rounded-t bg-green-500/80 transition-all hover:bg-green-500"
+                    class="w-full rounded-t bg-emerald-500/80 transition-all hover:bg-emerald-500"
                     style={{ height: `${(d.users / maxValue) * 100}%` }}
                   />
                 </div>
@@ -63,7 +63,7 @@ export default component$(() => {
               Conversations
             </div>
             <div class="flex items-center gap-1">
-              <div class="h-2 w-2 rounded bg-green-500" />
+              <div class="h-2 w-2 rounded bg-emerald-500" />
               UsersIcon
             </div>
           </div>

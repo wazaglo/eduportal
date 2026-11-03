@@ -46,7 +46,7 @@ export default component$(() => {
   });
 
   return (
-    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="min-h-screen flex items-center justify-center px-4 pt-28 pb-16">
       <div class="w-full max-w-md">
         <div class="text-center mb-8">
           <Link href="/" class="inline-flex items-center gap-2 mb-6">
